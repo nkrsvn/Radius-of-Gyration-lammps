@@ -1,0 +1,49 @@
+#package gpu 1
+
+units real
+dimension      3
+processors     * * *
+boundary       p p p
+atom_style     full
+#pair_style      lj/cut/coul/long/gpu 10
+pair_style      lj/cut/coul/long 10
+bond_style      harmonic
+angle_style     harmonic
+dihedral_style  harmonic
+improper_style umbrella
+kspace_style    pppm 1.0e-4
+
+#special_bonds   dreiding
+pair_modify     tail yes mix arithmetic
+
+# read the original positions for the atoms of the PEG molecule, as well as the same parameter file as previously
+read_data 44000_2.data
+
+fix      1 all npt temp 650 150 100 iso 0 0 1000
+group    mol_1 molecule 1
+group    mol_2 molecule 2
+group    mol_3 molecule 3
+group    mol_4 molecule 4
+group    mol_5 molecule 5
+group    mol_6 molecule 6
+compute  GR_1 mol_1 gyration
+compute  GR_2 mol_2 gyration
+compute  GR_3 mol_3 gyration
+compute  GR_4 mol_4 gyration
+compute  GR_5 mol_5 gyration
+compute  GR_6 mol_6 gyration
+dump     mydmp all atom 1000 Cooling.lammpstrj
+thermo   1000
+thermo_style   custom step temp pe press vol lx density c_GR_1 c_GR_2 c_GR_3 c_GR_4 c_GR_5 c_GR_6
+variable mytemp equal temp
+fix temp_GR all ave/time 100 5 1000 v_mytemp c_GR_1 c_GR_2 c_GR_3 c_GR_4 c_GR_5 c_GR_6 file temp_GR.dat
+
+timestep 1
+run            500000
+write_data cooling_44000_2.data
+
+unfix          1
+
+
+
+
